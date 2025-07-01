@@ -1,0 +1,36 @@
+-- Пример плана выполнения
+
+-- EXPLAIN ANALYZE запроса на общую сумму заказов по пользователям
+
+EXPLAIN ANALYZE
+SELECT username, SUM(price * quantity) AS total_spent
+FROM users
+JOIN orders ON users.id = orders.user_id
+JOIN order_items ON orders.id = order_items.order_id
+JOIN products ON order_items.product_id = products.id
+GROUP BY username;
+
+-- Результат
+"GroupAggregate  (cost=17.75..17.87 rows=3 width=150) (actual time=0.125..0.129 rows=2 loops=1)"
+"  Group Key: users.username"
+"  ->  Sort  (cost=17.75..17.77 rows=6 width=138) (actual time=0.114..0.115 rows=6 loops=1)"
+"        Sort Key: users.username"
+"        Sort Method: quicksort  Memory: 25kB"
+"        ->  Nested Loop  (cost=2.20..17.68 rows=6 width=138) (actual time=0.090..0.096 rows=6 loops=1)"
+"              Join Filter: (users.id = orders.user_id)"
+"              Rows Removed by Join Filter: 2"
+"              ->  Hash Join  (cost=2.20..16.41 rows=6 width=24) (actual time=0.079..0.083 rows=6 loops=1)"
+"                    Hash Cond: (order_items.order_id = orders.id)"
+"                    ->  Hash Join  (cost=1.14..15.32 rows=6 width=24) (actual time=0.029..0.032 rows=6 loops=1)"
+"                          Hash Cond: (products.id = order_items.product_id)"
+"                          ->  Seq Scan on products  (cost=0.00..13.00 rows=300 width=20) (actual time=0.008..0.008 rows=5 loops=1)"
+"                          ->  Hash  (cost=1.06..1.06 rows=6 width=12) (actual time=0.011..0.011 rows=6 loops=1)"
+"                                Buckets: 1024  Batches: 1  Memory Usage: 9kB"
+"                                ->  Seq Scan on order_items  (cost=0.00..1.06 rows=6 width=12) (actual time=0.008..0.009 rows=6 loops=1)"
+"                    ->  Hash  (cost=1.03..1.03 rows=3 width=8) (actual time=0.040..0.040 rows=3 loops=1)"
+"                          Buckets: 1024  Batches: 1  Memory Usage: 9kB"
+"                          ->  Seq Scan on orders  (cost=0.00..1.03 rows=3 width=8) (actual time=0.027..0.028 rows=3 loops=1)"
+"              ->  Materialize  (cost=0.00..1.04 rows=3 width=122) (actual time=0.002..0.002 rows=1 loops=6)"
+"                    ->  Seq Scan on users  (cost=0.00..1.03 rows=3 width=122) (actual time=0.006..0.007 rows=2 loops=1)"
+"Planning Time: 0.401 ms"
+"Execution Time: 0.398 ms"
